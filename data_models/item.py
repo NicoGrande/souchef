@@ -9,7 +9,6 @@ class Item:
 
     name: str
     item_id: UUID
-    quantity: Quantity
     unit_price: float
     merchant: str
     nutritional_facts: dict[str, str]
