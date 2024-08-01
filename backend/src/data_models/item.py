@@ -2,8 +2,8 @@ import dataclasses
 import uuid
 import datetime
 
-import backend.src.data_models.quantity as sc_quantity
-import backend.src.utils.types as sc_types
+from backend.src.data_models import quantity as sc_quantity
+from backend.src.utils import types as sc_types
 
 
 @dataclasses.dataclass
@@ -15,8 +15,13 @@ class Item:
     quantity: sc_quantity.Quantity
     price: float
     merchant: str
-    macros: dict[sc_types.Macros, sc_quantity.Quantity]
+    per_unit_macros: dict[sc_types.Macro, sc_quantity.Quantity]
     expiration_date: datetime
-    is_ingredient: bool
-    is_refrigerated: bool
-    is_frozen: bool
+    storage: sc_types.StorageType
+
+    def __repr__(self):
+        return self.name
+
+    def get_shelf_life_remaining(self):
+        time_delta = self.expiration_date - datetime.datetime.now().date()
+        return time_delta.days
