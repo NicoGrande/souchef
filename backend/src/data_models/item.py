@@ -15,13 +15,26 @@ class Item:
     quantity: sc_quantity.Quantity
     price: float
     merchant: str
-    per_unit_macros: dict[sc_types.Macro, sc_quantity.Quantity]
-    expiration_date: datetime
+    per_serving_macros: dict[sc_types.Macro, sc_quantity.Quantity]
+    serving_size: sc_quantity.Quantity
+    expiration_date: datetime.datetime | None
+    shelf_life: datetime.timedelta | None
     storage: sc_types.StorageType
+
+    def __post_init__(self):
+        if self.expiration_date is None and self.shelf_life is None:
+            raise ValueError(
+                "At lease one of expiration_date or shelf_life must be specified."
+            )
+
+        if self.expiration_date is None:
+            self.expiration_date = datetime.datetime.now().date() + self.shelf_life
 
     def __repr__(self):
         return self.name
 
     def get_shelf_life_remaining(self):
-        time_delta = self.expiration_date - datetime.datetime.now().date()
+        if self.expiration_date is not None:
+            time_delta = self.expiration_date - datetime.datetime.now().date()
+
         return time_delta.days
