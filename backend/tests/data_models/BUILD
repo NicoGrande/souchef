@@ -12,3 +12,11 @@ py_test(
 )
 
 
+py_test(
+    name = "test_quantity",
+    srcs = ["test_quantity.py"],
+    deps = [
+        "//backend/src/data_models:quantity", 
+        "//backend/src/utils:types"
+    ]
+)

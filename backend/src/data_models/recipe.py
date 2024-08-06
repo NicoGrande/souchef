@@ -33,15 +33,16 @@ class recipe:
         return is_feasible
 
     def _compute_recipe_macros(self):
-        self.nutritional_facts = {
-            sc_types.Macros.CARBS: sc_quantity.Quantity(0, sc_types.Units.GRAMS),
-            sc_types.Macros.FAT: sc_quantity.Quantity(0, sc_types.Units.GRAMS),
-            sc_types.Macros.PROTEIN: sc_quantity.Quantity(0, sc_types.Units.GRAMS),
-        }
+        self._nutritional_facts = sc_quantity.macrosDefaultDict()
         for item, required_quantity in self.recipe_ingredients.items():
-            for macro, macro_quantity in item.macros.items():
-                required_quantity_grams = sc_math.convert_unit(
-                    required_quantity, sc_types.Units.GRAMS
-                )
-                macro_multiplier = item.quantity / required_quantity_grams
-                self.nutritional_facts[macro] += macro_quantity * macro_multiplier
+            for macro, serving_quantity in item.per_serving_macros.items():
+                macro_multiplier = required_quantity / item.serving_size
+                self._nutritional_facts[macro] += serving_quantity * macro_multiplier
+
+    @property
+    def is_feasible(self) -> bool:
+        return self._is_recipe_feasible()
+
+    @property
+    def nutritional_facts(self) -> dict[sc_types.Macro, sc_quantity.Quantity]:
+        return self._nutritional_facts

@@ -7,13 +7,3 @@ py_library(
     name = "types",
     srcs = ["types.py"],
 )
-
-
-py_library(
-    name = "math",
-    srcs = ["math.py"],
-    deps = [
-        ":types",
-        "//backend/src/data_models:quantity"
-    ]
-)

@@ -6,6 +6,8 @@ class Unit(enum.Enum):
     KILOS = "kg"
     GRAMS = "g"
     KCAL = "kcal"
+    GALLONS = "gal"
+    LITER = "L"
     NONE = ""
 
 
