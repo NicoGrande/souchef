@@ -32,9 +32,16 @@ class Item:
 
     def __repr__(self):
         return self.name
+    
+    def __hash__(self):
+        return hash(self.name)
+    
+    def __eq__(self, other: "Item"):
+        return self.name == other.name
 
     def get_shelf_life_remaining(self):
         if self.expiration_date is not None:
             time_delta = self.expiration_date - datetime.datetime.now().date()
 
         return time_delta.days
+    

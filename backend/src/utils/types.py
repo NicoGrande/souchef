@@ -8,6 +8,7 @@ class Unit(enum.Enum):
     KCAL = "kcal"
     GALLONS = "gal"
     LITER = "L"
+    OUNCES = "oz"
     NONE = ""
 
 

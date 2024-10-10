@@ -4,15 +4,14 @@ import logging
 
 import backend.src.data_models.item as sc_item
 import backend.src.data_models.quantity as sc_quantity
-import backend.src.utils.math as sc_math
 import backend.src.utils.types as sc_types
 
 
 @dataclass
-class recipe:
+class Recipe:
     """Class representing meal recipe"""
 
-    recipe_sid: uuid.UUID
+    recipe_id: uuid.UUID
     recipe_name: str
     recipe_description: str
     recipe_instructions: dict[int, str]
@@ -24,20 +23,28 @@ class recipe:
     def _is_recipe_feasible(self) -> bool:
         is_feasible = True
         for item, required_quantity in self.recipe_ingredients.items():
-            required_quantity_converted = sc_math.convert_unit(
+            required_quantity_converted = sc_quantity.convert_unit(
                 required_quantity, item.quantity.unit
             )
-            if item.quantity.quantity > required_quantity_converted:
+            if item.quantity.quantity < required_quantity_converted:
                 logging.warning(f"Not enough {item.name} for recipe {self.recipe_name}")
                 is_feasible = False
         return is_feasible
 
     def _compute_recipe_macros(self):
         self._nutritional_facts = sc_quantity.macrosDefaultDict()
-        for item, required_quantity in self.recipe_ingredients.items():
-            for macro, serving_quantity in item.per_serving_macros.items():
-                macro_multiplier = required_quantity / item.serving_size
-                self._nutritional_facts[macro] += serving_quantity * macro_multiplier
+        for macro in sc_types.Macro:
+            total = 0
+            for ingredient, quantity in self.recipe_ingredients.items():
+                serving_size = ingredient.serving_size
+                recipe_quantity = sc_quantity.convert_unit(quantity, serving_size.unit)
+                servings = recipe_quantity / serving_size.quantity
+                total += ingredient.per_serving_macros[macro].quantity * servings
+            
+            if macro == sc_types.Macro.CALORIES:
+                self._nutritional_facts[macro] = sc_quantity.Quantity(total, sc_types.Unit.KCAL, sc_types.UnitType.ENERGY)
+            else:
+                self._nutritional_facts[macro] = sc_quantity.Quantity(total, sc_types.Unit.GRAMS, sc_types.UnitType.WEIGHT)
 
     @property
     def is_feasible(self) -> bool:

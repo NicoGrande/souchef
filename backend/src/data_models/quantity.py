@@ -3,10 +3,16 @@ import backend.src.utils.types as sc_types
 
 
 WEIGHT_CONVERSIONS = {
-    (sc_types.Unit.GRAMS, sc_types.Unit.KILOS): 1000.0,
-    (sc_types.Unit.KILOS, sc_types.Unit.GRAMS): 0.001,
+    (sc_types.Unit.GRAMS, sc_types.Unit.KILOS): 0.001,
+    (sc_types.Unit.KILOS, sc_types.Unit.GRAMS): 1000.0,
     (sc_types.Unit.KILOS, sc_types.Unit.POUNDS): 2.20462,
     (sc_types.Unit.POUNDS, sc_types.Unit.KILOS): 0.453592,
+    (sc_types.Unit.POUNDS, sc_types.Unit.OUNCES): 16.0,
+    (sc_types.Unit.OUNCES, sc_types.Unit.POUNDS): 0.0625,
+    (sc_types.Unit.OUNCES, sc_types.Unit.GRAMS): 28.3495,
+    (sc_types.Unit.GRAMS, sc_types.Unit.OUNCES): 0.035274,
+    (sc_types.Unit.GRAMS, sc_types.Unit.POUNDS): 0.00220462,
+    (sc_types.Unit.POUNDS, sc_types.Unit.GRAMS): 453.592,
 }
 
 
@@ -33,6 +39,7 @@ class Quantity:
         self._check_types(other)
         value = convert_unit(other, self.unit)
         self.quantity += value
+        return self
 
     def __sub__(self, other: "Quantity") -> "Quantity":
         self._check_types(other)
@@ -43,12 +50,37 @@ class Quantity:
         self._check_types(other)
         value = convert_unit(other, self.unit)
         self.quantity -= value
+        return self
 
+    def __mul__(self, other: "Quantity") -> "Quantity":
+        self._check_types(other)
+        value = convert_unit(other, self.unit)
+        return Quantity(self.quantity * value, self.unit, self.type)
+
+    def __imul__(self, other: "Quantity"):
+        self._check_types(other)
+        value = convert_unit(other, self.unit)
+        self.quantity *= value
+        return self
+
+    def __truediv__(self, other: "Quantity") -> "Quantity":
+        self._check_types(other)
+        value = convert_unit(other, self.unit)
+        return Quantity(self.quantity / value, self.unit, self.type)
+
+    def __itruediv__(self, other: "Quantity"):
+        self._check_types(other)
+        value = convert_unit(other, self.unit)
+        self.quantity /= value
+        return self
 
 def convert_unit(input_quantity: Quantity, output_units: sc_types.Unit) -> float:
     original_quanity = input_quantity.quantity
     original_units = input_quantity.unit
-
+    
+    if original_units == output_units:
+        return original_quanity
+    
     conversion_factor = _get_conversion_factor(original_units, output_units)
     return original_quanity * conversion_factor
 

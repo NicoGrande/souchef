@@ -18,5 +18,5 @@ py_library(
 py_library(
     name = "recipe",
     srcs = ["recipe.py"],
-    deps = [":item", ":quantity", "//backend/src/utils:types", "//backend/src/utils:math"]
+    deps = [":item", ":quantity", "//backend/src/utils:types"]
 )
