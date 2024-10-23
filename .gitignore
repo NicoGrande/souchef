@@ -3,3 +3,4 @@ bazel-*
 bazel-*/
 *.bazel
 *.bazel.lock
+.env
