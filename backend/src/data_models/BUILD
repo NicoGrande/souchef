@@ -20,3 +20,9 @@ py_library(
     srcs = ["recipe.py"],
     deps = [":item", ":quantity", "//backend/src/utils:types"]
 )
+
+py_library(
+    name = "receipt",
+    srcs = ["receipt.py"],
+    deps = [":item", "//backend/src/utils:types"]
+)

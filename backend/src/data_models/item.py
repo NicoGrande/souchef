@@ -1,7 +1,7 @@
 import datetime
 import pydantic
 import typing
-
+import uuid
 from backend.src.data_models import quantity as sc_quantity
 from backend.src.utils import types as sc_types
 
@@ -21,6 +21,7 @@ class Item(pydantic.BaseModel):
         storage (sc_types.StorageType): The storage type for the item.
     """
 
+    item_id: uuid.UUID = pydantic.Field(default_factory=uuid.uuid4)
     name: str
     quantity: sc_quantity.Quantity
     price: float

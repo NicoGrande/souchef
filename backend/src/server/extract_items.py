@@ -1,13 +1,16 @@
+import base64
 import dotenv
+import httpx
+import pprint
+
 from langchain.agents import create_openai_tools_agent, AgentExecutor
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 from langchain_community.tools import Tool
 from langchain_google_community import GoogleSearchAPIWrapper
 from langchain.output_parsers import PydanticOutputParser
-import pprint
-import httpx
-import base64
+
+import backend.src.data_models.receipt as sc_receipt
 
 dotenv.load_dotenv()
 
@@ -42,6 +45,7 @@ class ExtractItemsAgent:
             verbose (bool): Whether to enable verbose output. Defaults to False.
         """
         self._llm = ChatOpenAI(model=model, temperature=temperature)
+        self._schema_parser = PydanticOutputParser(pydantic_object=sc_receipt.Receipt)
         self._extract_items_prompt = ChatPromptTemplate.from_messages(
             [
                 (
@@ -51,10 +55,6 @@ class ExtractItemsAgent:
                 (
                     "system",
                     "Use the receipt and the following image to extract items. The receipt may be blurry, so use the image to help you. There should be one item per line on the receipt.",
-                ),
-                (
-                    "system",
-                    "Items shoudld extracted with the following schema: {schema}.",
                 ),
                 (
                     "system",
@@ -74,7 +74,7 @@ class ExtractItemsAgent:
                 ),
                 (
                     "system",
-                    "Output your final answer in JSON format.",
+                    "Output your final answer with the following schema formatting instructions: {format_instructions}.",
                 ),
                 (
                     "human",
@@ -102,30 +102,6 @@ class ExtractItemsAgent:
         self._extract_items_agent_executor = AgentExecutor(
             agent=self._extract_items_agent, tools=self._tools, verbose=verbose
         )
-        self._schema = """
-            Receipt:
-                merchant: str
-                date: str
-                items: list[Item]
-
-            Item:
-                name: str
-                brand: str
-                price: float
-                quantity: float
-                unit: str
-                serving_size: str
-                nutrition_info: dict[Macro, quantity]
-                shelf_life: str
-            
-            Macro:
-                calories: float
-                protein: float
-                fat: float
-                carbohydrates: float
-                sugar: float
-                fiber: float
-        """
         self._branded_items_url = (
             "https://fdc.nal.usda.gov/fdc-app.html#/food-search?query=&type=Branded"
         )
@@ -169,9 +145,9 @@ class ExtractItemsAgent:
             {
                 "receipt_data": receipt_data,
                 "image_data": image_data,
-                "schema": self._schema,
                 "branded_items_url": self._branded_items_url,
                 "foundation_items_url": self._foundation_items_url,
+                "format_instructions": self._schema_parser.get_format_instructions(),
             }
         )
 
