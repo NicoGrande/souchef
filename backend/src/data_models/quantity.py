@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+import pydantic
 import backend.src.utils.types as sc_types
 
 
@@ -16,71 +16,195 @@ WEIGHT_CONVERSIONS = {
 }
 
 
-@dataclass
-class Quantity:
-    """Data class representing the amount of an item."""
+class Quantity(pydantic.BaseModel):
+    """
+    Data class representing the amount of an item.
+
+    Attributes:
+        quantity (float): The numeric value of the quantity.
+        unit (sc_types.Unit): The unit of measurement.
+        type (sc_types.UnitType): The type of unit (e.g., weight, volume).
+    """
 
     quantity: float
     unit: sc_types.Unit
     type: sc_types.UnitType
 
     def _check_types(self, other: "Quantity"):
+        """
+        Check if two Quantity objects have the same UnitType.
+
+        Args:
+            other (Quantity): The other Quantity object to compare with.
+
+        Raises:
+            TypeError: If the UnitTypes don't match.
+        """
         if self.type != other.type:
             raise TypeError(
                 "Quantities must have the same Unit Type to perform arithmetic."
             )
 
     def __add__(self, other: "Quantity") -> "Quantity":
+        """
+        Add two Quantity objects.
+
+        Args:
+            other (Quantity): The Quantity object to add.
+
+        Returns:
+            Quantity: A new Quantity object with the sum.
+
+        Raises:
+            TypeError: If the UnitTypes don't match.
+        """
         self._check_types(other)
         value = convert_unit(other, self.unit)
-        return Quantity(self.quantity + value, self.unit, self.type)
+        return Quantity(quantity=self.quantity + value, unit=self.unit, type=self.type)
 
     def __iadd__(self, other: "Quantity"):
+        """
+        In-place addition of two Quantity objects.
+
+        Args:
+            other (Quantity): The Quantity object to add.
+
+        Returns:
+            Quantity: The updated Quantity object.
+
+        Raises:
+            TypeError: If the UnitTypes don't match.
+        """
         self._check_types(other)
         value = convert_unit(other, self.unit)
         self.quantity += value
         return self
 
     def __sub__(self, other: "Quantity") -> "Quantity":
+        """
+        Subtract two Quantity objects.
+
+        Args:
+            other (Quantity): The Quantity object to subtract.
+
+        Returns:
+            Quantity: A new Quantity object with the difference.
+
+        Raises:
+            TypeError: If the UnitTypes don't match.
+        """
         self._check_types(other)
         value = convert_unit(other, self.unit)
-        return Quantity(self.quantity - value, self.unit, self.type)
+        return Quantity(quantity=self.quantity - value, unit=self.unit, type=self.type)
 
     def __isub__(self, other: "Quantity"):
+        """
+        In-place subtraction of two Quantity objects.
+
+        Args:
+            other (Quantity): The Quantity object to subtract.
+
+        Returns:
+            Quantity: The updated Quantity object.
+
+        Raises:
+            TypeError: If the UnitTypes don't match.
+        """
         self._check_types(other)
         value = convert_unit(other, self.unit)
         self.quantity -= value
         return self
 
     def __mul__(self, other: "Quantity") -> "Quantity":
+        """
+        Multiply two Quantity objects.
+
+        Args:
+            other (Quantity): The Quantity object to multiply by.
+
+        Returns:
+            Quantity: A new Quantity object with the product.
+
+        Raises:
+            TypeError: If the UnitTypes don't match.
+        """
         self._check_types(other)
         value = convert_unit(other, self.unit)
-        return Quantity(self.quantity * value, self.unit, self.type)
+        return Quantity(quantity=self.quantity * value, unit=self.unit, type=self.type)
 
     def __imul__(self, other: "Quantity"):
+        """
+        In-place multiplication of two Quantity objects.
+
+        Args:
+            other (Quantity): The Quantity object to multiply by.
+
+        Returns:
+            Quantity: The updated Quantity object.
+
+        Raises:
+            TypeError: If the UnitTypes don't match.
+        """
         self._check_types(other)
         value = convert_unit(other, self.unit)
         self.quantity *= value
         return self
 
     def __truediv__(self, other: "Quantity") -> "Quantity":
+        """
+        Divide two Quantity objects.
+
+        Args:
+            other (Quantity): The Quantity object to divide by.
+
+        Returns:
+            Quantity: A new Quantity object with the quotient.
+
+        Raises:
+            TypeError: If the UnitTypes don't match.
+            ZeroDivisionError: If the other Quantity's value is zero.
+        """
         self._check_types(other)
         value = convert_unit(other, self.unit)
-        return Quantity(self.quantity / value, self.unit, self.type)
+        return Quantity(quantity=self.quantity / value, unit=self.unit, type=self.type)
 
     def __itruediv__(self, other: "Quantity"):
+        """
+        In-place division of two Quantity objects.
+
+        Args:
+            other (Quantity): The Quantity object to divide by.
+
+        Returns:
+            Quantity: The updated Quantity object.
+
+        Raises:
+            TypeError: If the UnitTypes don't match.
+            ZeroDivisionError: If the other Quantity's value is zero.
+        """
         self._check_types(other)
         value = convert_unit(other, self.unit)
         self.quantity /= value
         return self
 
+
 def convert_unit(input_quantity: Quantity, output_units: sc_types.Unit) -> float:
+    """
+    Convert a Quantity to a different unit.
+
+    Args:
+        input_quantity (Quantity): The input Quantity object.
+        output_units (sc_types.Unit): The desired output unit.
+
+    Returns:
+        float: The converted quantity value.
+    """
     original_quanity = input_quantity.quantity
     original_units = input_quantity.unit
-    
+
     if original_units == output_units:
         return original_quanity
-    
+
     conversion_factor = _get_conversion_factor(original_units, output_units)
     return original_quanity * conversion_factor
 
@@ -88,23 +212,47 @@ def convert_unit(input_quantity: Quantity, output_units: sc_types.Unit) -> float
 def _get_conversion_factor(
     input_unit: sc_types.Unit, output_units: sc_types.Unit
 ) -> float:
+    """
+    Get the conversion factor between two units.
+
+    Args:
+        input_unit (sc_types.Unit): The input unit.
+        output_units (sc_types.Unit): The output unit.
+
+    Returns:
+        float: The conversion factor.
+
+    Raises:
+        KeyError: If the conversion is not defined in WEIGHT_CONVERSIONS.
+    """
     return WEIGHT_CONVERSIONS[(input_unit, output_units)]
 
 
 def macrosDefaultDict() -> dict[sc_types.Macro, Quantity]:
+    """
+    Create a default dictionary of macronutrients with zero quantities.
+
+    Returns:
+        dict[sc_types.Macro, Quantity]: A dictionary with macronutrients as keys
+            and zero Quantity objects as values.
+    """
     return {
-        sc_types.Macro.CARB: Quantity(0, sc_types.Unit.GRAMS, sc_types.UnitType.WEIGHT),
-        sc_types.Macro.FAT: Quantity(0, sc_types.Unit.GRAMS, sc_types.UnitType.WEIGHT),
+        sc_types.Macro.CARB: Quantity(
+            quantity=0, unit=sc_types.Unit.GRAMS, type=sc_types.UnitType.WEIGHT
+        ),
+        sc_types.Macro.FAT: Quantity(
+            quantity=0, unit=sc_types.Unit.GRAMS, type=sc_types.UnitType.WEIGHT
+        ),
         sc_types.Macro.PROTEIN: Quantity(
-            0, sc_types.Unit.GRAMS, sc_types.UnitType.WEIGHT
+            quantity=0, unit=sc_types.Unit.GRAMS, type=sc_types.UnitType.WEIGHT
         ),
         sc_types.Macro.SUGAR: Quantity(
-            0, sc_types.Unit.GRAMS, sc_types.UnitType.WEIGHT
+            quantity=0, unit=sc_types.Unit.GRAMS, type=sc_types.UnitType.WEIGHT
         ),
         sc_types.Macro.CALORIES: Quantity(
-            0, sc_types.Unit.KCAL, sc_types.UnitType.ENERGY
+            quantity=0, unit=sc_types.Unit.KCAL, type=sc_types.UnitType.ENERGY
         ),
         sc_types.Macro.FIBER: Quantity(
-            0, sc_types.Unit.GRAMS, sc_types.UnitType.WEIGHT
+            quantity=0, unit=sc_types.Unit.GRAMS, type=sc_types.UnitType.WEIGHT
         ),
     }
