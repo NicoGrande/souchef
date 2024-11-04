@@ -29,7 +29,7 @@ def test_receipt_init():
         shelf_life=datetime.timedelta(days=1),
         storage=sc_types.StorageType.PANTRY,
     )
-    
+
     test_item2 = Item(
         name="Test Item 2",
         quantity=sc_quantity.Quantity(
@@ -50,10 +50,7 @@ def test_receipt_init():
     )
 
     # Create receipt
-    receipt = Receipt(
-        merchant="Test Merchant",
-        items=[test_item1, test_item2]
-    )
+    receipt = Receipt(merchant="Test Merchant", items=[test_item1, test_item2])
 
     # Test attributes
     assert receipt.merchant == "Test Merchant"
@@ -68,16 +65,16 @@ def test_receipt_validation():
     with pytest.raises(ValueError):
         Receipt(
             merchant=123,  # Invalid merchant type (should be string)
-            items=[]
+            items=[],
         )
 
     # Test validation with invalid items type
     with pytest.raises(ValueError):
         Receipt(
             merchant="Test Merchant",
-            items="not a list"  # Invalid items type (should be list)
+            items="not a list",  # Invalid items type (should be list)
         )
 
 
 if __name__ == "__main__":
-    sys.exit(pytest.main()) 
+    sys.exit(pytest.main())

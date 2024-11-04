@@ -44,7 +44,9 @@ def split_descriptions(food_df: pd.DataFrame) -> pd.DataFrame:
         chunk_size=500, chunk_overlap=0
     )
     chunks = []
-    for _, row in tqdm(food_df.iterrows(), total=len(food_df), desc="Splitting descriptions"):
+    for _, row in tqdm(
+        food_df.iterrows(), total=len(food_df), desc="Splitting descriptions"
+    ):
         splits = splitter.create_documents([row["description"]])
         [
             chunks.append({"fdc_id": row["fdc_id"], "text": split.page_content})
@@ -54,7 +56,9 @@ def split_descriptions(food_df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(chunks)
 
 
-def generate_embeddings(chunked_df: pd.DataFrame, batch_size: int = 100) -> pd.DataFrame:
+def generate_embeddings(
+    chunked_df: pd.DataFrame, batch_size: int = 100
+) -> pd.DataFrame:
     """Generate embeddings for the chunked descriptions.
 
     Args:
@@ -67,18 +71,20 @@ def generate_embeddings(chunked_df: pd.DataFrame, batch_size: int = 100) -> pd.D
     if not os.getenv("OPENAI_API_KEY"):
         os.environ["OPENAI_API_KEY"] = getpass.getpass("Enter your OpenAI API key: ")
 
-    logging.info(f"Generating embeddings for {len(chunked_df)} chunks in batches of {batch_size}")
+    logging.info(
+        f"Generating embeddings for {len(chunked_df)} chunks in batches of {batch_size}"
+    )
     embedding = OpenAIEmbeddings(model="text-embedding-3-small")
-    
+
     result_df = pd.DataFrame()
     for i in tqdm(range(0, len(chunked_df), batch_size), desc="Generating embeddings"):
-        batch = chunked_df.iloc[i:i+batch_size]
+        batch = chunked_df.iloc[i : i + batch_size]
         batch["embedding"] = batch["text"].apply(lambda x: embedding.embed_query(x))
         result_df = pd.concat([result_df, batch], ignore_index=True)
-        
+
         # Save intermediate results
         save_embeddings(result_df, table_id="food_embeddings")
-        
+
     return result_df
 
 
@@ -99,22 +105,28 @@ def save_embeddings(
     Returns:
         None
     """
-    logging.info(f"Appending {len(embeddings_df)} embeddings to {dataset_id}.{table_id}")
+    logging.info(
+        f"Appending {len(embeddings_df)} embeddings to {dataset_id}.{table_id}"
+    )
     client = bigquery.Client(project=project_id)
     table_ref = client.dataset(dataset_id).table(table_id)
-    
+
     # Configure the load job to append data
     job_config = bigquery.LoadJobConfig(
         write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
-        schema_update_options=[bigquery.SchemaUpdateOption.ALLOW_FIELD_ADDITION]
+        schema_update_options=[bigquery.SchemaUpdateOption.ALLOW_FIELD_ADDITION],
     )
-    
-    job = client.load_table_from_dataframe(embeddings_df, table_ref, job_config=job_config)
+
+    job = client.load_table_from_dataframe(
+        embeddings_df, table_ref, job_config=job_config
+    )
     job.result()  # Wait for the job to complete
 
     # Log the number of rows in the table after appending
     table = client.get_table(table_ref)
-    logging.info(f"Total rows in {dataset_id}.{table_id} after appending: {table.num_rows}")
+    logging.info(
+        f"Total rows in {dataset_id}.{table_id} after appending: {table.num_rows}"
+    )
 
 
 if __name__ == "__main__":

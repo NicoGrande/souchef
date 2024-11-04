@@ -1,6 +1,7 @@
 import pydantic
 import backend.src.utils.types as sc_types
 from pydantic import field_validator, ValidationInfo
+from pydantic import field_validator, ValidationInfo
 
 
 WEIGHT_CONVERSIONS = {
@@ -36,11 +37,11 @@ class Quantity(pydantic.BaseModel):
         if isinstance(value, str):
             # Convert to lowercase and remove whitespace
             cleaned_value = value.lower().strip()
-            
+
             # Try direct mapping first
             if cleaned_value in sc_types.UNIT_MAPPINGS:
                 return sc_types.UNIT_MAPPINGS[cleaned_value]
-            
+
             # Try enum name matching
             try:
                 return sc_types.Unit[cleaned_value.upper()]
@@ -59,16 +60,18 @@ class Quantity(pydantic.BaseModel):
                 pass
 
         # If we have a unit, infer the type from it
-        if 'unit' in info.data:
-            return sc_types.UNIT_TYPE_MAPPINGS.get(info.data['unit'], sc_types.UnitType.NONE)
-        
+        if "unit" in info.data:
+            return sc_types.UNIT_TYPE_MAPPINGS.get(
+                info.data["unit"], sc_types.UnitType.NONE
+            )
+
         return sc_types.UnitType.NONE
 
     @field_validator("quantity", mode="before")
     def validate_quantity(cls, value):
         if isinstance(value, str):
             try:
-                return float(value.replace(',', ''))
+                return float(value.replace(",", ""))
             except ValueError:
                 raise ValueError(f"Cannot convert {value} to float")
         return float(value)

@@ -11,6 +11,7 @@ class Receipt(pydantic.BaseModel):
 
     Attributes:
         merchant (str): The name of the merchant of the reciept.
+        merchant (str): The name of the merchant of the reciept.
         receipt_id (uuid.UUID): The unique identifier for the receipt.
         date (datetime.date): The date when the receipt was issued.
         items (list[Item]): A list of items purchased, where each item is an instance
@@ -18,7 +19,7 @@ class Receipt(pydantic.BaseModel):
     """
 
     merchant: str
+    merchant: str
     items: list[sc_item.Item]
     _receipt_id: uuid.UUID = pydantic.PrivateAttr(default_factory=uuid.uuid4)
     _date: datetime.date = pydantic.PrivateAttr(default_factory=datetime.date.today)
-
