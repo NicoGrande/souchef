@@ -116,8 +116,7 @@ def test_recipe_macro_aggregation():
 def test_recipe_validation():
     with pytest.raises(pydantic.ValidationError):
         Recipe(
-            recipe_id="not-a-uuid",  # This should raise a validation error
-            recipe_name="Invalid Recipe",
+            recipe_name=1234, # Invalid recipe name
             recipe_description="This recipe should fail validation",
             recipe_instructions={1: "Step 1"},
             recipe_ingredients={},

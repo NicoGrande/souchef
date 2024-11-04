@@ -4,6 +4,7 @@ import typing
 import uuid
 from backend.src.data_models import quantity as sc_quantity
 from backend.src.utils import types as sc_types
+from pydantic import field_validator
 
 
 class Item(pydantic.BaseModel):
@@ -21,11 +22,9 @@ class Item(pydantic.BaseModel):
         storage (sc_types.StorageType): The storage type for the item.
     """
 
-    item_id: uuid.UUID = pydantic.Field(default_factory=uuid.uuid4)
     name: str
     quantity: sc_quantity.Quantity
     price: float
-    merchant: str
     per_serving_macros: dict[sc_types.Macro, sc_quantity.Quantity] = pydantic.Field(
         default_factory=sc_quantity.macrosDefaultDict
     )
@@ -33,6 +32,7 @@ class Item(pydantic.BaseModel):
     shelf_life: datetime.timedelta
     storage: sc_types.StorageType
     _expiration_date: datetime.date
+    _item_id: uuid.UUID = pydantic.PrivateAttr(default_factory=uuid.uuid4)
 
     def model_post_init(self, __context: typing.Any):
         """Post-initialization method to set the expiration date."""
@@ -79,3 +79,30 @@ class Item(pydantic.BaseModel):
         """
         time_delta = self._expiration_date - datetime.datetime.now().date()
         return time_delta.days
+
+    @field_validator("storage", mode="before")
+    def validate_storage(cls, value):
+        if isinstance(value, str):
+            try:
+                return sc_types.StorageType[value.upper()]
+            except KeyError:
+                raise ValueError(f"Invalid storage type: {value}")
+        return value
+
+    @field_validator("per_serving_macros", mode="before")
+    def validate_macros(cls, value):
+        if isinstance(value, dict):
+            validated_macros = {}
+            for key, quantity in value.items():
+                if isinstance(key, str):
+                    try:
+                        macro_key = sc_types.MACRO_MAPPINGS[key.lower()]
+                        validated_macros[macro_key] = quantity
+                    except KeyError:
+                        raise ValueError(f"Invalid macro type: {key}")
+                elif isinstance(key, sc_types.Macro):
+                    validated_macros[key] = quantity
+                else:
+                    raise ValueError(f"Invalid macro type: {key}")
+            return validated_macros
+        return value

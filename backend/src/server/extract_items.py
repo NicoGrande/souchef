@@ -1,6 +1,7 @@
 import base64
 import dotenv
 import httpx
+import json
 import pprint
 
 from langchain.agents import create_openai_tools_agent, AgentExecutor
@@ -10,6 +11,7 @@ from langchain_community.tools import Tool
 from langchain_google_community import GoogleSearchAPIWrapper
 from langchain.output_parsers import PydanticOutputParser
 
+import backend.src.data_models.item as sc_item
 import backend.src.data_models.receipt as sc_receipt
 
 dotenv.load_dotenv()
@@ -58,7 +60,7 @@ class ExtractItemsAgent:
                 ),
                 (
                     "system",
-                    "Be sure to extract the supermarket or merchat from the top of the receipt, as well as the date of the purchase.",
+                    "Be sure to extract the supermarket or merchat from the top of the receipt.",
                 ),
                 (
                     "system",
@@ -74,7 +76,7 @@ class ExtractItemsAgent:
                 ),
                 (
                     "system",
-                    "Output your final answer with the following schema formatting instructions: {format_instructions}.",
+                    "{format_instructions}",
                 ),
                 (
                     "human",
@@ -124,7 +126,7 @@ class ExtractItemsAgent:
             )
         )
 
-    def extract_items_from_receipt(self, receipt_url: str, image_url: str) -> list[str]:
+    def extract_items_from_receipt(self, receipt_url: str, image_url: str) -> list[sc_item.Item]:
         """
         Extracts items from a receipt and an image of the items.
 
@@ -135,13 +137,16 @@ class ExtractItemsAgent:
             receipt_url (str): URL of the receipt image.
             image_url (str): URL of the image containing the items.
 
+        Raises:
+            ValueError: If the output JSON is not valid.
+
         Returns:
             list[str]: A list of extracted items with their details.
         """
         receipt_data = base64.b64encode(httpx.get(receipt_url).content).decode("utf-8")
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
 
-        return self._extract_items_agent_executor.invoke(
+        output = self._extract_items_agent_executor.invoke(
             {
                 "receipt_data": receipt_data,
                 "image_data": image_data,
@@ -150,6 +155,20 @@ class ExtractItemsAgent:
                 "format_instructions": self._schema_parser.get_format_instructions(),
             }
         )
+        
+        # Clean up the output text by removing markdown code block syntax and newlines
+        output_text = output["output"]
+        if output_text.startswith("```json\n"):
+            output_text = output_text[7:]  # Remove ```json\n prefix
+        if output_text.endswith("\n```"):
+            output_text = output_text[:-4]  # Remove \n``` suffix
+        
+        try:
+            output_json = json.loads(output_text)
+            receipt = sc_receipt.Receipt.model_validate(output_json)
+            return receipt.items
+        except Exception as e:
+            raise ValueError(f"Failed to parse JSON output: {e}\nOutput text: {output_text}")
 
 
 def main():

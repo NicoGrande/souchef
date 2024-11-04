@@ -4,3 +4,5 @@ bazel-*/
 *.bazel
 *.bazel.lock
 .env
+.cursorignore
+__pycache__

@@ -30,3 +30,12 @@ py_test(
         "//backend/src/utils:types"
     ]
 )
+
+py_test(
+    name = "test_receipt",
+    srcs = ["test_receipt.py"],
+    deps = [
+        "//backend/src/data_models:receipt", 
+        "//backend/src/utils:types"
+    ]
+)
