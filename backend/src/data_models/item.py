@@ -92,6 +92,9 @@ class Item(pydantic.BaseModel):
     @field_validator("per_serving_macros", mode="before")
     def validate_macros(cls, value):
         if isinstance(value, dict):
+            if value == {}:
+                return sc_quantity.macrosDefaultDict()
+    
             validated_macros = {}
             for key, quantity in value.items():
                 if isinstance(key, str):

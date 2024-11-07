@@ -16,15 +16,15 @@ class Unit(enum.Enum):
         NONE (str): Empty string, representing no unit.
     """
 
-    POUNDS = enum.auto()
-    KILOS = enum.auto()
-    GRAMS = enum.auto()
-    KCAL = enum.auto()
-    GALLONS = enum.auto()
-    LITER = enum.auto()
-    MILLILITER = enum.auto()
-    OUNCES = enum.auto()
-    NONE = enum.auto()
+    POUNDS = "lb"
+    KILOS = "kg"
+    GRAMS = "g"
+    KCAL = "kcal"
+    GALLONS = "gal"
+    LITER = "L"
+    MILLILITER = "ml"
+    OUNCES = "oz"
+    NONE = "none"
 
 
 class UnitType(enum.Enum):
@@ -38,10 +38,10 @@ class UnitType(enum.Enum):
         NONE: Represents no specific unit type.
     """
 
-    WEIGHT = enum.auto()
-    VOLUME = enum.auto()
-    ENERGY = enum.auto()
-    NONE = enum.auto()
+    WEIGHT = "weight"
+    VOLUME = "volume"
+    ENERGY = "energy"
+    NONE = "none"
 
 
 class StorageType(enum.Enum):
@@ -54,9 +54,9 @@ class StorageType(enum.Enum):
         FREEZER: Represents freezer storage.
     """
 
-    PANTRY = enum.auto()
-    FRIDGE = enum.auto()
-    FREEZER = enum.auto()
+    PANTRY = "pantry"
+    FRIDGE = "fridge"
+    FREEZER = "freezer"
 
 
 class Macro(enum.Enum):
@@ -72,12 +72,12 @@ class Macro(enum.Enum):
         FIBER: Represents dietary fiber.
     """
 
-    CARB = enum.auto()
-    FAT = enum.auto()
-    PROTEIN = enum.auto()
-    SUGAR = enum.auto()
-    CALORIES = enum.auto()
-    FIBER = enum.auto()
+    CARB = "carbohydrates"
+    FAT = "fat"
+    PROTEIN = "protein"
+    SUGAR = "sugar"
+    CALORIES = "calories"
+    FIBER = "fiber"
 
 
 # Common unit string mappings
@@ -141,12 +141,18 @@ MACRO_MAPPINGS = {
     # Fat
     "fat": Macro.FAT,
     "fats": Macro.FAT,
+    "total fat": Macro.FAT,
     # Protein
     "protein": Macro.PROTEIN,
     # Sugar
     "sugar": Macro.SUGAR,
+    "total sugars": Macro.SUGAR,
     # Calories
     "calories": Macro.CALORIES,
+    "cals": Macro.CALORIES,
+    "kcal": Macro.CALORIES,
     # Fiber
     "fiber": Macro.FIBER,
+    "total fiber": Macro.FIBER,
+    "dietary fiber": Macro.FIBER,
 }

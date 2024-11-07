@@ -2,8 +2,6 @@ import base64
 import dotenv
 import httpx
 import json
-import json
-import pprint
 
 from langchain.agents import create_openai_tools_agent, AgentExecutor
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -63,7 +61,6 @@ class ExtractItemsAgent:
                 (
                     "system",
                     "Be sure to extract the supermarket or merchat from the top of the receipt.",
-                    "Be sure to extract the supermarket or merchat from the top of the receipt.",
                 ),
                 (
                     "system",
@@ -79,7 +76,6 @@ class ExtractItemsAgent:
                 ),
                 (
                     "system",
-                    "{format_instructions}",
                     "{format_instructions}",
                 ),
                 (
@@ -132,7 +128,7 @@ class ExtractItemsAgent:
 
     def extract_items_from_receipt(
         self, receipt_url: str, image_url: str
-    ) -> list[sc_item.Item]:
+    ) -> sc_receipt.Receipt:
         """
         Extracts items from a receipt and an image of the items.
 
@@ -175,7 +171,109 @@ class ExtractItemsAgent:
         try:
             output_json = json.loads(output_text)
             receipt = sc_receipt.Receipt.model_validate(output_json)
-            return receipt.items
+            return receipt
+        except Exception as e:
+            raise ValueError(
+                f"Failed to parse JSON output: {e}\nOutput text: {output_text}"
+            )
+
+
+class ValidateItemsAgent:
+    """
+    Validates items extracted from a receipt.
+    """
+
+    def __init__(self, model: str = "gpt-4o-mini", temperature: float = 0, verbose: bool = False):
+        self._llm = ChatOpenAI(model=model, temperature=temperature)
+        self._schema_parser = PydanticOutputParser(pydantic_object=sc_item.Item)
+        self._validate_items_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    "You are recieving a list of items extracted from a reciept.",
+                ),
+                (
+                    "system",
+                    "For each of the items, search online to find nutritional information and provide any additional information that is missing on the item.",
+                ),
+                (
+                    "system",
+                    "The nutritial information that is important to extract is the serving size as well as the calories, protein, fat, carbohydrates, fiber and sugars per serving.",
+                ),
+                (
+                    "system",
+                    "A good query for nutritional information is '{merchant} [ITEM NAME] nutrition facts' for each of the items in {items}.",
+                ),
+                (
+                    "system",
+                    "{format_instructions}",
+                ),
+                MessagesPlaceholder(variable_name="agent_scratchpad"),
+            ]
+        )
+        self._tools = []
+        self._setup_tools()
+        self._validate_items_agent = create_openai_tools_agent(
+            self._llm, self._tools, prompt=self._validate_items_prompt
+        )
+        self._validate_items_agent_executor = AgentExecutor(
+            agent=self._validate_items_agent, tools=self._tools, verbose=verbose
+        )
+
+    def _setup_tools(self):
+        """
+        Sets up the tools used by the agent.
+
+        This method initializes the Google Search API tool and adds it to the agent's toolkit.
+        """
+        google_search_api = GoogleSearchAPIWrapper()
+        self._tools.append(
+            Tool(
+                name="google_search",
+                description="Search the internet for nutritional and serving size information of food items.",
+                func=google_search_api.run,
+            )
+        )
+
+    def validate_items(
+        self, receipt: sc_receipt.Receipt
+    ) -> list[sc_item.Item]:
+        """
+        Validates items extracted from a receipt.
+
+        This method processes the receipt and image data, and uses the agent to extract
+        detailed information about the items.
+
+        Args:
+            items (list[sc_item.Item]): A list of items to validate.
+
+        Raises:
+            ValueError: If the output JSON is not valid.
+
+        Returns:
+            list[str]: A list of extracted items with their details.
+        """
+
+        items_str = [item.name for item in receipt.items]
+        output = self._validate_items_agent_executor.invoke(
+            {
+                "items": items_str,
+                "merchant": receipt.merchant,
+                "format_instructions": self._schema_parser.get_format_instructions(),
+            }
+        )
+
+        # Clean up the output text by removing markdown code block syntax and newlines
+        output_text = output["output"]
+        if output_text.startswith("```json\n"):
+            output_text = output_text[7:]  # Remove ```json\n prefix
+        if output_text.endswith("\n```"):
+            output_text = output_text[:-4]  # Remove \n``` suffix
+
+        try:
+            output_json = json.loads(output_text)
+            validated_items = [sc_item.Item.model_validate(item) for item in output_json]
+            return validated_items
         except Exception as e:
             raise ValueError(
                 f"Failed to parse JSON output: {e}\nOutput text: {output_text}"
@@ -183,14 +281,21 @@ class ExtractItemsAgent:
 
 
 def main():
-    agent = ExtractItemsAgent()
-    pprint.pp(
-        agent.extract_items_from_receipt(
-            receipt_url="https://i.redd.it/4r55c4845kvc1.jpg",
-            image_url="https://i.redd.it/5dmd65845kvc1.jpg",
-        )
+    extract_items_agent = ExtractItemsAgent()
+    
+    receipt = extract_items_agent.extract_items_from_receipt(
+        receipt_url="https://i.redd.it/4r55c4845kvc1.jpg",
+        image_url="https://i.redd.it/5dmd65845kvc1.jpg",
     )
 
+    validate_items_agent = ValidateItemsAgent()
+    validated_items = validate_items_agent.validate_items(receipt)
+    
+    for item in validated_items:
+        print(item.model_dump_json(indent=4))
+    
+    print(f"{len(validated_items)} items extracted and validated.")
+        
 
 if __name__ == "__main__":
     main()
