@@ -7,3 +7,4 @@ bazel-*/
 .cursorignore
 __pycache__
 WORKSPACE
+backend/WORKSPACE
