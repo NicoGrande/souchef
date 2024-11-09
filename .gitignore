@@ -6,3 +6,4 @@ bazel-*/
 .env
 .cursorignore
 __pycache__
+WORKSPACE
