@@ -1,8 +1,8 @@
 import pytest
 import sys
 
-from backend.src.data_models import quantity as sc_quantity
-from backend.src.utils import types as sc_types
+from src.data_models import quantity as sc_quantity
+from src.utils import types as sc_types
 
 
 @pytest.mark.parametrize(

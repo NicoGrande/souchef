@@ -3,9 +3,9 @@ import logging
 import pydantic
 import typing
 
-import backend.src.data_models.item as sc_item
-import backend.src.data_models.quantity as sc_quantity
-import backend.src.utils.types as sc_types
+import src.data_models.item as sc_item
+import src.data_models.quantity as sc_quantity
+import src.utils.types as sc_types
 
 
 class Recipe(pydantic.BaseModel):
@@ -13,6 +13,7 @@ class Recipe(pydantic.BaseModel):
     Class representing a meal recipe.
 
     Attributes:
+        recipe_id (uuid.UUID): Unique identifier for the recipe.
         recipe_name (str): Name of the recipe.
         recipe_description (str): Description of the recipe.
         recipe_instructions (dict[int, str]): Step-by-step instructions for the recipe.

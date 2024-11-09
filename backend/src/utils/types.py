@@ -146,6 +146,7 @@ MACRO_MAPPINGS = {
     "protein": Macro.PROTEIN,
     # Sugar
     "sugar": Macro.SUGAR,
+    "sugars": Macro.SUGAR,
     "total sugars": Macro.SUGAR,
     # Calories
     "calories": Macro.CALORIES,

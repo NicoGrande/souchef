@@ -1,7 +1,7 @@
 import pydantic
-import backend.src.utils.types as sc_types
-from pydantic import field_validator, ValidationInfo
-from pydantic import field_validator, ValidationInfo
+import src.utils.types as sc_types
+from typing import Any
+from pydantic import root_validator, field_validator, ValidationInfo
 
 
 WEIGHT_CONVERSIONS = {
@@ -30,7 +30,9 @@ class Quantity(pydantic.BaseModel):
 
     quantity: float
     unit: sc_types.Unit
-    type: sc_types.UnitType
+    type: sc_types.UnitType = pydantic.Field(
+        default_factory=lambda: sc_types.UnitType.NONE
+    )
 
     @field_validator("unit", mode="before")
     def validate_unit(cls, value):
@@ -57,13 +59,12 @@ class Quantity(pydantic.BaseModel):
             try:
                 return sc_types.UnitType[value.upper()]
             except KeyError:
-                pass
+                raise ValueError(f"Invalid unit type: {value}")
 
         # If we have a unit, infer the type from it
         if "unit" in info.data:
-            return sc_types.UNIT_TYPE_MAPPINGS.get(
-                info.data["unit"], sc_types.UnitType.NONE
-            )
+            unit = cls.validate_unit(info.data["unit"])
+            return sc_types.UNIT_TYPE_MAPPINGS.get(unit, sc_types.UnitType.NONE)
 
         return sc_types.UnitType.NONE
 

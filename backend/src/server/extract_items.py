@@ -1,7 +1,7 @@
 import base64
-import dotenv
 import httpx
 import json
+import validators
 
 from langchain.agents import create_openai_tools_agent, AgentExecutor
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -10,11 +10,9 @@ from langchain_community.tools import Tool
 from langchain_google_community import GoogleSearchAPIWrapper
 from langchain.output_parsers import PydanticOutputParser
 
-import backend.src.data_models.item as sc_item
-import backend.src.data_models.item as sc_item
-import backend.src.data_models.receipt as sc_receipt
-
-dotenv.load_dotenv()
+import src.data_models.item as sc_item
+import src.data_models.item as sc_item
+import src.data_models.receipt as sc_receipt
 
 
 class ExtractItemsAgent:
@@ -64,15 +62,11 @@ class ExtractItemsAgent:
                 ),
                 (
                     "system",
-                    "If required, extract any necessary information about each item, such as the quantity, serving size and nutrition information from the merchat website.",
+                    "If required, extract any necessary information about each item from the merchat website.",
                 ),
                 (
                     "system",
-                    "If required, extract any necessary information about branded items, such as the quantity, serving size and nutrition information from {branded_items_url}.",
-                ),
-                (
-                    "system",
-                    "If required, extract any necessary information about foundational items, such as the quantity, serving size and nutrition information from {foundation_items_url}.",
+                    "The per unit amount of each item is important to extract. It often appears online as 'price / unit amount'. For example if the price is '$1.99 / 100g' then the unit amount is 100g.",
                 ),
                 (
                     "system",
@@ -140,14 +134,14 @@ class ExtractItemsAgent:
             image_url (str): URL of the image containing the items.
 
         Raises:
-            ValueError: If the output JSON is not valid.
-
-        Raises:
-            ValueError: If the output JSON is not valid.
+            ValueError: If the provided URLs are not valid.
 
         Returns:
             list[str]: A list of extracted items with their details.
         """
+        if not validators.url(receipt_url) or not validators.url(image_url):
+            raise ValueError("Invalid URL provided.")
+
         receipt_data = base64.b64encode(httpx.get(receipt_url).content).decode("utf-8")
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
 
@@ -183,7 +177,9 @@ class ValidateItemsAgent:
     Validates items extracted from a receipt.
     """
 
-    def __init__(self, model: str = "gpt-4o-mini", temperature: float = 0, verbose: bool = False):
+    def __init__(
+        self, model: str = "gpt-4o-mini", temperature: float = 0, verbose: bool = False
+    ):
         self._llm = ChatOpenAI(model=model, temperature=temperature)
         self._schema_parser = PydanticOutputParser(pydantic_object=sc_item.Item)
         self._validate_items_prompt = ChatPromptTemplate.from_messages(
@@ -199,6 +195,14 @@ class ValidateItemsAgent:
                 (
                     "system",
                     "The nutritial information that is important to extract is the serving size as well as the calories, protein, fat, carbohydrates, fiber and sugars per serving.",
+                ),
+                (
+                    "system",
+                    "For each macro (calories, protein, fat, carbohydrates, fiber, sugars), ensure you include both the quantity and unit, as well as the type field. For example: 'quantity': 140, 'unit': 'kcal', 'type': 'energy'",
+                ),
+                (
+                    "system",
+                    "Valid values for the type field are 'energy', 'weight', and 'volume' depending on the unit of the macro.",
                 ),
                 (
                     "system",
@@ -235,9 +239,7 @@ class ValidateItemsAgent:
             )
         )
 
-    def validate_items(
-        self, receipt: sc_receipt.Receipt
-    ) -> list[sc_item.Item]:
+    def validate_items(self, receipt: sc_receipt.Receipt) -> list[sc_item.Item]:
         """
         Validates items extracted from a receipt.
 
@@ -272,30 +274,14 @@ class ValidateItemsAgent:
 
         try:
             output_json = json.loads(output_text)
-            validated_items = [sc_item.Item.model_validate(item) for item in output_json]
+            validated_items = []
+            for index, item in enumerate(output_json["items"]):
+                validated_item = sc_item.Item.model_validate(item)
+                validated_item.price = receipt.items[index].price
+                validated_items.append(validated_item)
+
             return validated_items
         except Exception as e:
             raise ValueError(
                 f"Failed to parse JSON output: {e}\nOutput text: {output_text}"
             )
-
-
-def main():
-    extract_items_agent = ExtractItemsAgent()
-    
-    receipt = extract_items_agent.extract_items_from_receipt(
-        receipt_url="https://i.redd.it/4r55c4845kvc1.jpg",
-        image_url="https://i.redd.it/5dmd65845kvc1.jpg",
-    )
-
-    validate_items_agent = ValidateItemsAgent()
-    validated_items = validate_items_agent.validate_items(receipt)
-    
-    for item in validated_items:
-        print(item.model_dump_json(indent=4))
-    
-    print(f"{len(validated_items)} items extracted and validated.")
-        
-
-if __name__ == "__main__":
-    main()

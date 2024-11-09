@@ -2,8 +2,8 @@ import datetime
 import pydantic
 import typing
 import uuid
-from backend.src.data_models import quantity as sc_quantity
-from backend.src.utils import types as sc_types
+from src.data_models import quantity as sc_quantity
+from src.utils import types as sc_types
 from pydantic import field_validator
 
 
@@ -94,17 +94,29 @@ class Item(pydantic.BaseModel):
         if isinstance(value, dict):
             if value == {}:
                 return sc_quantity.macrosDefaultDict()
-    
+
             validated_macros = {}
             for key, quantity in value.items():
                 if isinstance(key, str):
                     try:
                         macro_key = sc_types.MACRO_MAPPINGS[key.lower()]
-                        validated_macros[macro_key] = quantity
                     except KeyError:
                         raise ValueError(f"Invalid macro type: {key}")
-                elif isinstance(key, sc_types.Macro):
+                    else:
+                        validated_macros[macro_key] = (
+                            sc_quantity.Quantity.model_validate(quantity)
+                        )
+
+                elif isinstance(key, sc_types.Macro) and isinstance(quantity, dict):
+                    validated_macros[key] = sc_quantity.Quantity.model_validate(
+                        quantity
+                    )
+
+                elif isinstance(key, sc_types.Macro) and isinstance(
+                    quantity, sc_quantity.Quantity
+                ):
                     validated_macros[key] = quantity
+
                 else:
                     raise ValueError(f"Invalid macro type: {key}")
             return validated_macros

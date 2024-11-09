@@ -3,54 +3,35 @@ import pytest
 import sys
 import uuid
 
-from backend.src.data_models.receipt import Receipt
-from backend.src.data_models.item import Item
-from backend.src.data_models import quantity as sc_quantity
-from backend.src.utils import types as sc_types
+from src.data_models.receipt import Receipt, ReceiptItem
+from src.data_models.item import Item
+from src.data_models import quantity as sc_quantity
+from src.utils import types as sc_types
 
 
 def test_receipt_init():
     # Create test items
-    test_item1 = Item(
+    receipt_item1 = ReceiptItem(
         name="Test Item 1",
+        price=1.0,
         quantity=sc_quantity.Quantity(
             quantity=1,
             unit=sc_types.Unit.NONE,
             type=sc_types.UnitType.NONE,
         ),
-        price=1.0,
-        merchant="Test Merchant",
-        per_serving_macros={},
-        serving_size=sc_quantity.Quantity(
-            quantity=1,
-            unit=sc_types.Unit.NONE,
-            type=sc_types.UnitType.NONE,
-        ),
-        shelf_life=datetime.timedelta(days=1),
-        storage=sc_types.StorageType.PANTRY,
     )
-
-    test_item2 = Item(
+    receipt_item2 = ReceiptItem(
         name="Test Item 2",
+        price=2.0,
         quantity=sc_quantity.Quantity(
             quantity=2,
             unit=sc_types.Unit.NONE,
             type=sc_types.UnitType.NONE,
         ),
-        price=2.0,
-        merchant="Test Merchant",
-        per_serving_macros={},
-        serving_size=sc_quantity.Quantity(
-            quantity=1,
-            unit=sc_types.Unit.NONE,
-            type=sc_types.UnitType.NONE,
-        ),
-        shelf_life=datetime.timedelta(days=1),
-        storage=sc_types.StorageType.PANTRY,
     )
 
     # Create receipt
-    receipt = Receipt(merchant="Test Merchant", items=[test_item1, test_item2])
+    receipt = Receipt(merchant="Test Merchant", items=[receipt_item1, receipt_item2])
 
     # Test attributes
     assert receipt.merchant == "Test Merchant"

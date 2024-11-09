@@ -6,23 +6,23 @@ package(default_visibility = ["//visibility:public"])
 py_library(
     name = "item",
     srcs = ["item.py"],
-    deps = [":quantity", "//backend/src/utils:types"]
+    deps = [":quantity", "//src/utils:types"]
 )
 
 py_library(
     name = "quantity",
     srcs = ["quantity.py"],
-    deps = ["//backend/src/utils:types"]
+    deps = ["//src/utils:types"]
 )
 
 py_library(
     name = "recipe",
     srcs = ["recipe.py"],
-    deps = [":item", ":quantity", "//backend/src/utils:types"]
+    deps = [":item", ":quantity", "//src/utils:types"]
 )
 
 py_library(
     name = "receipt",
     srcs = ["receipt.py"],
-    deps = [":item", "//backend/src/utils:types"]
+    deps = [":item", "//src/utils:types"]
 )

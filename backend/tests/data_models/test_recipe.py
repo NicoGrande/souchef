@@ -4,10 +4,10 @@ import sys
 import uuid
 import pydantic
 
-from backend.src.data_models import quantity as sc_quantity
-from backend.src.utils import types as sc_types
-from backend.src.data_models.recipe import Recipe
-from backend.src.data_models.item import Item
+from src.data_models import quantity as sc_quantity
+from src.utils import types as sc_types
+from src.data_models.recipe import Recipe
+from src.data_models.item import Item
 
 
 def test_recipe_macro_aggregation():
