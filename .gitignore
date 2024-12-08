@@ -8,3 +8,9 @@ bazel-*/
 __pycache__
 WORKSPACE
 backend/WORKSPACE
+*.log
+*.log.*
+*.plist
+*.db
+.firebaserc
+firebase.json
