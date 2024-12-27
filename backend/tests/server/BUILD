@@ -5,6 +5,7 @@ py_test(
         "//src/server:extract_items", 
         "//src/data_models:receipt",
         "//src/data_models:item",
+        "@pip//pytest"
     ],
 )
 
@@ -12,5 +13,10 @@ py_test(
 py_test(
     name = "test_store_items",
     srcs = ["test_store_items.py"],
-    deps = ["//src/server:store_items", "//src/data_models:item"],
+    deps = [
+        "//src/server:store_items", 
+        "//src/data_models:item",
+        "@pip//pytest",
+        "@pip//firebase_admin"
+    ],
 )

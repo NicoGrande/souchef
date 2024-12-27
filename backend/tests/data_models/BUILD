@@ -7,7 +7,8 @@ py_test(
     deps = [
         "//src/data_models:item", 
         "//src/data_models:quantity", 
-        "//src/utils:types"
+        "//src/utils:types",
+        "@pip//pytest"
     ]
 )
 
@@ -17,7 +18,8 @@ py_test(
     srcs = ["test_quantity.py"],
     deps = [
         "//src/data_models:quantity", 
-        "//src/utils:types"
+        "//src/utils:types",
+        "@pip//pytest"
     ]
 )
 
@@ -27,7 +29,8 @@ py_test(
     srcs = ["test_recipe.py"],
     deps = [
         "//src/data_models:recipe", 
-        "//src/utils:types"
+        "//src/utils:types",
+        "@pip//pytest"
     ]
 )
 
@@ -36,6 +39,7 @@ py_test(
     srcs = ["test_receipt.py"],
     deps = [
         "//src/data_models:receipt", 
-        "//src/utils:types"
+        "//src/utils:types",
+        "@pip//pytest"
     ]
 )

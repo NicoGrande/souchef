@@ -24,6 +24,10 @@ class Unit(enum.Enum):
     LITER = "L"
     MILLILITER = "ml"
     OUNCES = "oz"
+    FLUID_OUNCE = "fl oz"
+    CUP = "cup"
+    TEASPOON = "tsp"
+    TABLESPOON = "tbsp"
     NONE = "none"
 
 
@@ -109,6 +113,9 @@ UNIT_MAPPINGS = {
     "mls": Unit.MILLILITER,
     "milliliter": Unit.MILLILITER,
     "milliliters": Unit.MILLILITER,
+    "fl oz": Unit.FLUID_OUNCE,
+    "fluid ounce": Unit.FLUID_OUNCE,
+    "fluid ounces": Unit.FLUID_OUNCE,
     # Energy units
     "kcal": Unit.KCAL,
     "calorie": Unit.KCAL,
@@ -118,6 +125,19 @@ UNIT_MAPPINGS = {
     "count": Unit.NONE,
     "piece": Unit.NONE,
     "pieces": Unit.NONE,
+    "whole": Unit.NONE,
+    "cloves": Unit.NONE,
+    # Cooking units
+    "cup": Unit.CUP,
+    "cups": Unit.CUP,
+    "teaspoon": Unit.TEASPOON,
+    "teaspoons": Unit.TEASPOON,
+    "tablespoon": Unit.TABLESPOON,
+    "tablespoons": Unit.TABLESPOON,
+    "pinch": Unit.NONE,
+    "pinches": Unit.NONE,
+    "dash": Unit.NONE,
+    "dashes": Unit.NONE,
 }
 
 # Unit type mappings

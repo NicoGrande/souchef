@@ -14,3 +14,4 @@ backend/WORKSPACE
 *.db
 .firebaserc
 firebase.json
+data/

@@ -6,7 +6,7 @@ import pydantic
 
 from src.data_models import quantity as sc_quantity
 from src.utils import types as sc_types
-from src.data_models.recipe import Recipe
+from src.data_models.recipe import Recipe, RecipeIngredient
 from src.data_models.item import Item
 
 
@@ -85,27 +85,29 @@ def test_recipe_macro_aggregation():
 
     # Create a recipe with these ingredients
     recipe = Recipe(
-        recipe_id=uuid.uuid4(),
-        recipe_name="Chicken and Rice",
-        recipe_description="A simple recipe to cook chicken and rice.",
-        recipe_instructions={
+        name="Chicken and Rice",
+        description="A simple recipe to cook chicken and rice.",
+        instructions={
             1: "Cook the chicken in a pan.",
             2: "Cook the rice in a pot.",
             3: "Mix the chicken and rice together.",
             4: "Serve.",
         },
-        recipe_ingredients={
-            ingredient1: sc_quantity.Quantity(
-                quantity=4, unit=sc_types.Unit.OUNCES, type=sc_types.UnitType.WEIGHT
+        ingredients={
+            "Chicken Breast": RecipeIngredient(
+                name="Chicken Breast", quantity=4, unit=sc_types.Unit.OUNCES.value
             ),
-            ingredient2: sc_quantity.Quantity(
-                quantity=195, unit=sc_types.Unit.GRAMS, type=sc_types.UnitType.WEIGHT
+            "Brown Rice": RecipeIngredient(
+                name="Brown Rice", quantity=195, unit=sc_types.Unit.GRAMS.value
             ),
         },
     )
 
-    # Check if the recipe correctly aggregates macros
-    assert recipe.is_feasible
+    # Check if the recipe is feasible and calculate nutritional facts
+    assert recipe._is_recipe_feasible([ingredient1, ingredient2])
+    recipe.calculate_nutritional_facts([ingredient1, ingredient2])
+
+    # Now check the nutritional facts
     assert recipe.nutritional_facts[sc_types.Macro.PROTEIN].quantity == pytest.approx(
         33.6
     )
@@ -116,10 +118,10 @@ def test_recipe_macro_aggregation():
 def test_recipe_validation():
     with pytest.raises(pydantic.ValidationError):
         Recipe(
-            recipe_name=1234,  # Invalid recipe name
-            recipe_description="This recipe should fail validation",
-            recipe_instructions={1: "Step 1"},
-            recipe_ingredients={},
+            name=1234,  # Invalid recipe name
+            description="This recipe should fail validation",
+            instructions={1: "Step 1"},
+            ingredients={},
         )
 
 

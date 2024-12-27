@@ -70,6 +70,9 @@ class Quantity(pydantic.BaseModel):
 
     @field_validator("quantity", mode="before")
     def validate_quantity(cls, value):
+        if isinstance(value, dict):
+            # If we receive a dictionary, extract the quantity value
+            return float(value.get("quantity", 0))
         if isinstance(value, str):
             try:
                 return float(value.replace(",", ""))
