@@ -4,6 +4,7 @@ import pydantic
 
 import src.data_models.item as sc_item
 import src.data_models.quantity as sc_quantity
+import src.data_models.nutritional_facts as sc_nutritional_facts
 import src.utils.types as sc_types
 
 
@@ -25,111 +26,105 @@ class Recipe(pydantic.BaseModel):
         name (str): Name of the recipe.
         description (str): Description of the recipe.
         instructions (dict[int, str]): Step-by-step instructions for the recipe.
-        ingredients (dict[str, RecipeIngredient]): Ingredients and their quantities.
+        ingredients (list[RecipeIngredient]): Ingredients and their quantities.
     """
 
     name: str
     description: str
     instructions: dict[int, str]
-    ingredients: dict[str, RecipeIngredient]
-    nutritional_facts: dict[sc_types.Macro, sc_quantity.Quantity] = pydantic.Field(
-        default_factory=sc_quantity.macrosDefaultDict
+    ingredients: list[RecipeIngredient]
+    nutritional_facts: sc_nutritional_facts.NutritionalFacts = pydantic.Field(
+        default_factory=sc_nutritional_facts.NutritionalFacts
     )
     _recipe_id: uuid.UUID = pydantic.PrivateAttr(default_factory=uuid.uuid4)
 
-    @pydantic.field_validator("nutritional_facts", mode="before")
-    def validate_nutritional_facts(cls, value):
+    @pydantic.field_validator("ingredients")
+    def validate_ingredients(cls, value):
         """
-        Validate the nutritional facts.
+        Validate the ingredients of the recipe.
         """
-        if isinstance(value, dict):
-            if value == {}:
-                return sc_quantity.macrosDefaultDict()
-
-            validated_macros = {}
-            for key, quantity in value.items():
-                if isinstance(key, str):
-                    try:
-                        macro_key = sc_types.MACRO_MAPPINGS[key.lower()]
-                    except KeyError:
-                        raise ValueError(f"Invalid macro type: {key}")
-                    else:
-                        validated_macros[macro_key] = (
-                            sc_quantity.Quantity.model_validate(quantity)
-                        )
-
-                elif isinstance(key, sc_types.Macro) and isinstance(quantity, dict):
-                    validated_macros[key] = sc_quantity.Quantity.model_validate(
-                        quantity
-                    )
-
-                elif isinstance(key, sc_types.Macro) and isinstance(
-                    quantity, sc_quantity.Quantity
-                ):
-                    validated_macros[key] = quantity
-
-                else:
-                    raise ValueError(f"Invalid macro type: {key}")
-            return validated_macros
+        if not isinstance(value, list) or not value:
+            raise ValueError("Ingredients cannot be empty and must be a list")
         return value
 
-    def _is_recipe_feasible(self, existing_items: list[sc_item.Item]) -> bool:
+    @pydantic.field_validator("instructions")
+    def validate_instructions(cls, value):
+        """
+        Validate the instructions of the recipe.
+        """
+        if not isinstance(value, dict) or not value:
+            raise ValueError("Instructions cannot be empty and must be a dictionary")
+        return value
+
+    def check_feasibility(self, existing_items: list[sc_item.Item]) -> bool:
         """
         Check if the recipe is feasible based on available ingredient quantities.
 
-        Returns:
-            bool: True if the recipe is feasible, False otherwise.
-        """
-        is_feasible = True
-        for item in existing_items:
-            if item.name in self.ingredients:
-                recipe_ingredient = self.ingredients[item.name]
-                # Create a Quantity object from the RecipeIngredient
-                required_quantity = sc_quantity.Quantity(
-                    quantity=recipe_ingredient.quantity,
-                    unit=sc_types.Unit(recipe_ingredient.unit),
-                    type=item.quantity.type,  # Use the same type as the item's quantity
-                )
-                required_quantity_converted = sc_quantity.convert_unit(
-                    required_quantity, item.quantity.unit
-                )
-                if item.quantity.quantity < required_quantity_converted:
-                    logging.warning(f"Not enough {item.name} for recipe {self.name}")
-                    is_feasible = False
-        return is_feasible
-
-    @property
-    def is_feasible(self) -> bool:
-        """
-        Check if the recipe is feasible based on available ingredient quantities.
+        Args:
+            existing_items (list[sc_item.Item]): List of available items to check against
 
         Returns:
-            bool: True if the recipe is feasible, False otherwise.
+            bool: True if the recipe is feasible, False otherwise
         """
-        return self._is_recipe_feasible()
+        item_lookup = {item.name: item for item in existing_items}
 
-    def calculate_nutritional_facts(self, items: list[sc_item.Item]) -> None:
+        for recipe_ingredient in self.ingredients:
+            if recipe_ingredient.name not in item_lookup:
+                logging.warning(f"Missing ingredient: {recipe_ingredient.name}")
+                return False
+
+            item = item_lookup[recipe_ingredient.name]
+            # Create a Quantity object from the RecipeIngredient
+            recipe_quantity = sc_quantity.Quantity(
+                quantity=recipe_ingredient.quantity,
+                unit=sc_types.Unit(recipe_ingredient.unit),
+                type=item.quantity.type,
+            )
+            required_quantity_converted = sc_quantity.convert_unit(
+                recipe_quantity, item.quantity.unit
+            )
+            if item.quantity.quantity < required_quantity_converted:
+                logging.warning(f"Not enough {item.name} for recipe {self.name}")
+                return False
+
+        return True
+
+    def update_nutritional_facts(self, existing_items: list[sc_item.Item]) -> None:
         """
         Calculate and update the nutritional facts for the recipe based on its ingredients.
         """
-        facts = sc_quantity.macrosDefaultDict()
+        facts = sc_nutritional_facts.NutritionalFacts()
 
-        for item in items:
-            if item.name in self.ingredients:
-                recipe_ingredient = self.ingredients[item.name]
+        # Create a lookup dictionary for items by name
+        item_lookup = {item.name: item for item in existing_items}
+
+        for recipe_ingredient in self.ingredients:
+            if recipe_ingredient.name in item_lookup:
+                item = item_lookup[recipe_ingredient.name]
                 # Calculate the ratio of recipe quantity to serving size
                 recipe_quantity = sc_quantity.Quantity(
                     quantity=recipe_ingredient.quantity,
                     unit=sc_types.Unit(recipe_ingredient.unit),
-                    type=item.serving_size.type,
+                    type=item.nutritional_facts.serving_size.type,
                 )
                 converted_recipe_quantity = sc_quantity.convert_unit(
-                    recipe_quantity, item.serving_size.unit
+                    recipe_quantity, item.nutritional_facts.serving_size.unit
                 )
-                ratio = converted_recipe_quantity / item.serving_size.quantity
+                ratio = (
+                    converted_recipe_quantity
+                    / item.nutritional_facts.serving_size.quantity
+                )
 
                 # Scale the macros by the ratio
-                for macro, quantity in item.per_serving_macros.items():
-                    facts[macro].quantity += quantity.quantity * ratio
+                facts.calories.quantity += (
+                    item.nutritional_facts.calories.quantity * ratio
+                )
+                facts.protein.quantity += (
+                    item.nutritional_facts.protein.quantity * ratio
+                )
+                facts.fat.quantity += item.nutritional_facts.fat.quantity * ratio
+                facts.carbs.quantity += item.nutritional_facts.carbs.quantity * ratio
+                facts.fiber.quantity += item.nutritional_facts.fiber.quantity * ratio
+                facts.sugar.quantity += item.nutritional_facts.sugar.quantity * ratio
 
         self.nutritional_facts = facts

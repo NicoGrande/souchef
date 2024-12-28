@@ -7,7 +7,8 @@ py_library(
     name = "item",
     srcs = ["item.py"],
     deps = [
-        ":quantity", 
+        ":quantity",
+        ":nutritional_facts",
         "//src/utils:types", 
         "@pip//pydantic",
     ]
@@ -28,6 +29,7 @@ py_library(
     deps = [
         ":item", 
         ":quantity", 
+        ":nutritional_facts",
         "//src/utils:types", 
         "@pip//pydantic",
     ]
@@ -38,6 +40,17 @@ py_library(
     srcs = ["receipt.py"],
     deps = [
         ":item", 
+        ":quantity",
+        "//src/utils:types", 
+        "@pip//pydantic",
+    ]
+)
+
+py_library(
+    name = "nutritional_facts",
+    srcs = ["nutritional_facts.py"],
+    deps = [
+        ":quantity",
         "//src/utils:types", 
         "@pip//pydantic",
     ]

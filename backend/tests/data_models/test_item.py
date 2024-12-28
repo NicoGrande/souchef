@@ -8,51 +8,12 @@ from src.utils import types as sc_types
 
 
 @pytest.mark.parametrize(
-    "name, quantity, price, merchant, per_serving_macros, serving_size, shelf_life, storage",
+    "name, quantity, shelf_life, storage",
     [
         (
             "banana",
             sc_quantity.Quantity(
                 quantity=3,
-                unit=sc_types.Unit.NONE,
-                type=sc_types.UnitType.NONE,
-            ),
-            1.50,
-            "Whole Foods",
-            {
-                sc_types.Macro.CARB: sc_quantity.Quantity(
-                    quantity=31,
-                    unit=sc_types.Unit.GRAMS,
-                    type=sc_types.UnitType.WEIGHT,
-                ),
-                sc_types.Macro.PROTEIN: sc_quantity.Quantity(
-                    quantity=1.48,
-                    unit=sc_types.Unit.GRAMS,
-                    type=sc_types.UnitType.WEIGHT,
-                ),
-                sc_types.Macro.FAT: sc_quantity.Quantity(
-                    quantity=0.449,
-                    unit=sc_types.Unit.GRAMS,
-                    type=sc_types.UnitType.WEIGHT,
-                ),
-                sc_types.Macro.SUGAR: sc_quantity.Quantity(
-                    quantity=16.6,
-                    unit=sc_types.Unit.GRAMS,
-                    type=sc_types.UnitType.WEIGHT,
-                ),
-                sc_types.Macro.CALORIES: sc_quantity.Quantity(
-                    quantity=102,
-                    unit=sc_types.Unit.KCAL,
-                    type=sc_types.UnitType.ENERGY,
-                ),
-                sc_types.Macro.FIBER: sc_quantity.Quantity(
-                    quantity=3.54,
-                    unit=sc_types.Unit.GRAMS,
-                    type=sc_types.UnitType.WEIGHT,
-                ),
-            },
-            sc_quantity.Quantity(
-                quantity=1,
                 unit=sc_types.Unit.NONE,
                 type=sc_types.UnitType.NONE,
             ),
@@ -66,45 +27,6 @@ from src.utils import types as sc_types
                 unit=sc_types.Unit.GRAMS,
                 type=sc_types.UnitType.WEIGHT,
             ),
-            2.99,
-            "Trader Joes",
-            {
-                sc_types.Macro.CARB: sc_quantity.Quantity(
-                    quantity=31,
-                    unit=sc_types.Unit.GRAMS,
-                    type=sc_types.UnitType.WEIGHT,
-                ),
-                sc_types.Macro.PROTEIN: sc_quantity.Quantity(
-                    quantity=9,
-                    unit=sc_types.Unit.GRAMS,
-                    type=sc_types.UnitType.WEIGHT,
-                ),
-                sc_types.Macro.FAT: sc_quantity.Quantity(
-                    quantity=10,
-                    unit=sc_types.Unit.GRAMS,
-                    type=sc_types.UnitType.WEIGHT,
-                ),
-                sc_types.Macro.SUGAR: sc_quantity.Quantity(
-                    quantity=5,
-                    unit=sc_types.Unit.GRAMS,
-                    type=sc_types.UnitType.WEIGHT,
-                ),
-                sc_types.Macro.CALORIES: sc_quantity.Quantity(
-                    quantity=250,
-                    unit=sc_types.Unit.KCAL,
-                    type=sc_types.UnitType.ENERGY,
-                ),
-                sc_types.Macro.FIBER: sc_quantity.Quantity(
-                    quantity=1,
-                    unit=sc_types.Unit.GRAMS,
-                    type=sc_types.UnitType.WEIGHT,
-                ),
-            },
-            sc_quantity.Quantity(
-                quantity=94,
-                unit=sc_types.Unit.GRAMS,
-                type=sc_types.UnitType.WEIGHT,
-            ),
             datetime.timedelta(days=5),
             sc_types.StorageType.FRIDGE,
         ),
@@ -113,45 +35,6 @@ from src.utils import types as sc_types
             sc_quantity.Quantity(
                 quantity=1.23,
                 unit=sc_types.Unit.POUNDS,
-                type=sc_types.UnitType.WEIGHT,
-            ),
-            8.99,
-            "QFC",
-            {
-                sc_types.Macro.CARB: sc_quantity.Quantity(
-                    quantity=3,
-                    unit=sc_types.Unit.GRAMS,
-                    type=sc_types.UnitType.WEIGHT,
-                ),
-                sc_types.Macro.PROTEIN: sc_quantity.Quantity(
-                    quantity=27,
-                    unit=sc_types.Unit.GRAMS,
-                    type=sc_types.UnitType.WEIGHT,
-                ),
-                sc_types.Macro.FAT: sc_quantity.Quantity(
-                    quantity=3.5,
-                    unit=sc_types.Unit.GRAMS,
-                    type=sc_types.UnitType.WEIGHT,
-                ),
-                sc_types.Macro.SUGAR: sc_quantity.Quantity(
-                    quantity=1,
-                    unit=sc_types.Unit.GRAMS,
-                    type=sc_types.UnitType.WEIGHT,
-                ),
-                sc_types.Macro.CALORIES: sc_quantity.Quantity(
-                    quantity=160,
-                    unit=sc_types.Unit.KCAL,
-                    type=sc_types.UnitType.ENERGY,
-                ),
-                sc_types.Macro.FIBER: sc_quantity.Quantity(
-                    quantity=0,
-                    unit=sc_types.Unit.GRAMS,
-                    type=sc_types.UnitType.WEIGHT,
-                ),
-            },
-            sc_quantity.Quantity(
-                quantity=112,
-                unit=sc_types.Unit.GRAMS,
                 type=sc_types.UnitType.WEIGHT,
             ),
             datetime.timedelta(
@@ -164,26 +47,18 @@ from src.utils import types as sc_types
 def test_item_init(
     name,
     quantity,
-    price,
-    merchant,
-    per_serving_macros,
-    serving_size,
     shelf_life,
     storage,
 ):
     test_item = sc_item.Item(
         name=name,
         quantity=quantity,
-        price=price,
-        merchant=merchant,
-        per_serving_macros=per_serving_macros,
-        serving_size=serving_size,
         shelf_life=shelf_life,
         storage=storage,
     )
 
     assert test_item.name == name
-    assert test_item.get_shelf_life_remaining() == shelf_life.days
+    assert test_item.get_shelf_life_remaining() == shelf_life
 
     if name == "banana":
         assert test_item.storage == sc_types.StorageType.PANTRY
@@ -213,28 +88,12 @@ def test_item_equality():
             unit=sc_types.Unit.NONE,
             type=sc_types.UnitType.NONE,
         ),
-        price=1.0,
-        merchant="Test Merchant",
-        per_serving_macros={},
-        serving_size=sc_quantity.Quantity(
-            quantity=1,
-            unit=sc_types.Unit.NONE,
-            type=sc_types.UnitType.NONE,
-        ),
         shelf_life=datetime.timedelta(days=1),
         storage=sc_types.StorageType.PANTRY,
     )
     item2 = sc_item.Item(
         name="Test Item",
         quantity=sc_quantity.Quantity(
-            quantity=2,
-            unit=sc_types.Unit.NONE,
-            type=sc_types.UnitType.NONE,
-        ),
-        price=2.0,
-        merchant="Another Merchant",
-        per_serving_macros={},
-        serving_size=sc_quantity.Quantity(
             quantity=2,
             unit=sc_types.Unit.NONE,
             type=sc_types.UnitType.NONE,
@@ -249,14 +108,6 @@ def test_item_equality():
             unit=sc_types.Unit.NONE,
             type=sc_types.UnitType.NONE,
         ),
-        price=1.0,
-        merchant="Test Merchant",
-        per_serving_macros={},
-        serving_size=sc_quantity.Quantity(
-            quantity=1,
-            unit=sc_types.Unit.NONE,
-            type=sc_types.UnitType.NONE,
-        ),
         shelf_life=datetime.timedelta(days=1),
         storage=sc_types.StorageType.PANTRY,
     )
@@ -265,6 +116,74 @@ def test_item_equality():
     assert item1 != item3  # Different name
     assert hash(item1) == hash(item2)
     assert hash(item1) != hash(item3)
+
+
+def test_parse_shelf_life():
+    """Test the shelf life parsing function with various formats."""
+    test_cases = [
+        # ISO 8601 duration format
+        ("P1Y", datetime.timedelta(days=365)),
+        ("P6M", datetime.timedelta(days=180)),
+        ("P2W", datetime.timedelta(days=14)),
+        ("P5D", datetime.timedelta(days=5)),
+        # Natural language format
+        ("1 year", datetime.timedelta(days=365)),
+        ("2 years", datetime.timedelta(days=730)),
+        ("6 months", datetime.timedelta(days=180)),
+        ("2 weeks", datetime.timedelta(days=14)),
+        ("5 days", datetime.timedelta(days=5)),
+        # Abbreviated formats
+        ("1yr", datetime.timedelta(days=365)),
+        ("6mo", datetime.timedelta(days=180)),
+        ("2wk", datetime.timedelta(days=14)),
+        ("5d", datetime.timedelta(days=5)),
+        # Simple number (days)
+        ("5", datetime.timedelta(days=5)),
+        # Decimal values
+        ("1.5 years", datetime.timedelta(days=547)),
+        ("2.5 months", datetime.timedelta(days=75)),
+        # Already a timedelta
+        (datetime.timedelta(days=5), datetime.timedelta(days=5)),
+    ]
+
+    for input_value, expected_output in test_cases:
+        test_item = sc_item.Item(
+            name="Test Item",
+            quantity=sc_quantity.Quantity(
+                quantity=1,
+                unit=sc_types.Unit.NONE,
+                type=sc_types.UnitType.NONE,
+            ),
+            shelf_life=input_value,
+            storage=sc_types.StorageType.PANTRY,
+        )
+        assert test_item.get_shelf_life_remaining() == expected_output
+
+
+def test_parse_shelf_life_errors():
+    """Test error cases for shelf life parsing."""
+    invalid_inputs = [
+        "invalid",
+        "P1X",  # Invalid ISO duration
+        "1 decade",  # Unsupported unit
+        "year",  # Missing number
+        None,  # Invalid type
+        123,  # Invalid type
+    ]
+
+    for invalid_input in invalid_inputs:
+        with pytest.raises(ValueError):
+            print(invalid_input)
+            sc_item.Item(
+                name="Test Item",
+                quantity=sc_quantity.Quantity(
+                    quantity=1,
+                    unit=sc_types.Unit.NONE,
+                    type=sc_types.UnitType.NONE,
+                ),
+                shelf_life=invalid_input,
+                storage=sc_types.StorageType.PANTRY,
+            )
 
 
 if __name__ == "__main__":

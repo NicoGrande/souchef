@@ -98,15 +98,5 @@ def test_convert_unit(input_quantity, output_unit, expected_value):
     assert result == pytest.approx(expected_value)
 
 
-def test_macros_default_dict():
-    macros = sc_quantity.macrosDefaultDict()
-    assert len(macros) == 6  # Check all macros are present
-
-    # Check each macro has correct initial values and types
-    for macro_quantity in macros.values():
-        assert isinstance(macro_quantity, sc_quantity.Quantity)
-        assert macro_quantity.quantity == 0
-
-
 if __name__ == "__main__":
     sys.exit(pytest.main())

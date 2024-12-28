@@ -1,7 +1,6 @@
 import pydantic
 import src.utils.types as sc_types
-from typing import Any
-from pydantic import root_validator, field_validator, ValidationInfo
+from pydantic import field_validator, ValidationInfo
 
 
 WEIGHT_CONVERSIONS = {
@@ -276,33 +275,3 @@ def _get_conversion_factor(
         KeyError: If the conversion is not defined in WEIGHT_CONVERSIONS.
     """
     return WEIGHT_CONVERSIONS[(input_unit, output_units)]
-
-
-def macrosDefaultDict() -> dict[sc_types.Macro, Quantity]:
-    """
-    Create a default dictionary of macronutrients with zero quantities.
-
-    Returns:
-        dict[sc_types.Macro, Quantity]: A dictionary with macronutrients as keys
-            and zero Quantity objects as values.
-    """
-    return {
-        sc_types.Macro.CARB: Quantity(
-            quantity=0, unit=sc_types.Unit.GRAMS, type=sc_types.UnitType.WEIGHT
-        ),
-        sc_types.Macro.FAT: Quantity(
-            quantity=0, unit=sc_types.Unit.GRAMS, type=sc_types.UnitType.WEIGHT
-        ),
-        sc_types.Macro.PROTEIN: Quantity(
-            quantity=0, unit=sc_types.Unit.GRAMS, type=sc_types.UnitType.WEIGHT
-        ),
-        sc_types.Macro.SUGAR: Quantity(
-            quantity=0, unit=sc_types.Unit.GRAMS, type=sc_types.UnitType.WEIGHT
-        ),
-        sc_types.Macro.CALORIES: Quantity(
-            quantity=0, unit=sc_types.Unit.KCAL, type=sc_types.UnitType.ENERGY
-        ),
-        sc_types.Macro.FIBER: Quantity(
-            quantity=0, unit=sc_types.Unit.GRAMS, type=sc_types.UnitType.WEIGHT
-        ),
-    }

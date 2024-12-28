@@ -10,8 +10,6 @@ from langchain_community.tools import Tool
 from langchain_google_community import GoogleSearchAPIWrapper
 from langchain.output_parsers import PydanticOutputParser
 
-import src.data_models.item as sc_item
-import src.data_models.item as sc_item
 import src.data_models.receipt as sc_receipt
 
 
@@ -58,15 +56,15 @@ class ExtractItemsAgent:
                 ),
                 (
                     "system",
-                    "Be sure to extract the supermarket or merchat from the top of the receipt.",
+                    "Be sure to extract the supermarket or merchat from the top of the receipt. This should be the name of a store or a chain of stores (for example: 'Target' or 'Walmart').",
                 ),
                 (
                     "system",
-                    "If required, extract any necessary information about each item from the merchat website.",
+                    "If you cannot find the amount of each item purchased, either use the image or estimate the amount or look up the item online to find typical purchase amounts.",
                 ),
                 (
                     "system",
-                    "The per unit amount of each item is important to extract. It often appears online as 'price / unit amount'. For example if the price is '$1.99 / 100g' then the unit amount is 100g.",
+                    "If you look online for the amount purchesed, it often appears online as 'price / unit amount'. For example if the price is '$1.99 / 100g' then the unit amount is 100g. Use this information and the price to calculate the amount of each item purchased.",
                 ),
                 (
                     "system",
@@ -166,121 +164,6 @@ class ExtractItemsAgent:
             output_json = json.loads(output_text)
             receipt = sc_receipt.Receipt.model_validate(output_json)
             return receipt
-        except Exception as e:
-            raise ValueError(
-                f"Failed to parse JSON output: {e}\nOutput text: {output_text}"
-            )
-
-
-class ValidateItemsAgent:
-    """
-    Validates items extracted from a receipt.
-    """
-
-    def __init__(
-        self, model: str = "gpt-4o-mini", temperature: float = 0, verbose: bool = False
-    ):
-        self._llm = ChatOpenAI(model=model, temperature=temperature)
-        self._schema_parser = PydanticOutputParser(pydantic_object=sc_item.Item)
-        self._validate_items_prompt = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    "You are recieving a list of items extracted from a reciept.",
-                ),
-                (
-                    "system",
-                    "For each of the items, search online to find nutritional information and provide any additional information that is missing on the item.",
-                ),
-                (
-                    "system",
-                    "The nutritial information that is important to extract is the serving size as well as the calories, protein, fat, carbohydrates, fiber and sugars per serving.",
-                ),
-                (
-                    "system",
-                    "For each macro (calories, protein, fat, carbohydrates, fiber, sugars), ensure you include both the quantity and unit, as well as the type field. For example: 'quantity': 140, 'unit': 'kcal', 'type': 'energy'",
-                ),
-                (
-                    "system",
-                    "Valid values for the type field are 'energy', 'weight', and 'volume' depending on the unit of the macro.",
-                ),
-                (
-                    "system",
-                    "A good query for nutritional information is '{merchant} [ITEM NAME] nutrition facts' for each of the items in {items}.",
-                ),
-                (
-                    "system",
-                    "{format_instructions}",
-                ),
-                MessagesPlaceholder(variable_name="agent_scratchpad"),
-            ]
-        )
-        self._tools = []
-        self._setup_tools()
-        self._validate_items_agent = create_openai_tools_agent(
-            self._llm, self._tools, prompt=self._validate_items_prompt
-        )
-        self._validate_items_agent_executor = AgentExecutor(
-            agent=self._validate_items_agent, tools=self._tools, verbose=verbose
-        )
-
-    def _setup_tools(self):
-        """
-        Sets up the tools used by the agent.
-
-        This method initializes the Google Search API tool and adds it to the agent's toolkit.
-        """
-        google_search_api = GoogleSearchAPIWrapper()
-        self._tools.append(
-            Tool(
-                name="google_search",
-                description="Search the internet for nutritional and serving size information of food items.",
-                func=google_search_api.run,
-            )
-        )
-
-    def validate_items(self, receipt: sc_receipt.Receipt) -> list[sc_item.Item]:
-        """
-        Validates items extracted from a receipt.
-
-        This method processes the receipt and image data, and uses the agent to extract
-        detailed information about the items.
-
-        Args:
-            items (list[sc_item.Item]): A list of items to validate.
-
-        Raises:
-            ValueError: If the output JSON is not valid.
-
-        Returns:
-            list[str]: A list of extracted items with their details.
-        """
-
-        items_str = [item.name for item in receipt.items]
-        output = self._validate_items_agent_executor.invoke(
-            {
-                "items": items_str,
-                "merchant": receipt.merchant,
-                "format_instructions": self._schema_parser.get_format_instructions(),
-            }
-        )
-
-        # Clean up the output text by removing markdown code block syntax and newlines
-        output_text = output["output"]
-        if output_text.startswith("```json\n"):
-            output_text = output_text[7:]  # Remove ```json\n prefix
-        if output_text.endswith("\n```"):
-            output_text = output_text[:-4]  # Remove \n``` suffix
-
-        try:
-            output_json = json.loads(output_text)
-            validated_items = []
-            for index, item in enumerate(output_json["items"]):
-                validated_item = sc_item.Item.model_validate(item)
-                validated_item.price = receipt.items[index].price
-                validated_items.append(validated_item)
-
-            return validated_items
         except Exception as e:
             raise ValueError(
                 f"Failed to parse JSON output: {e}\nOutput text: {output_text}"

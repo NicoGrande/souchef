@@ -1,9 +1,8 @@
 import pytest
 import sys
 import os
-from src.server.extract_items import ExtractItemsAgent, ValidateItemsAgent
+from src.server.extract_items import ExtractItemsAgent
 from src.data_models.receipt import Receipt, ReceiptItem
-from src.data_models.item import Item
 
 
 class TestExtractItems:
@@ -23,11 +22,6 @@ class TestExtractItems:
         """Fixture to create an ExtractItemsAgent instance."""
         return ExtractItemsAgent(verbose=True)
 
-    @pytest.fixture
-    def validate_items_agent(self):
-        """Fixture to create a ValidateItemsAgent instance."""
-        return ValidateItemsAgent(verbose=True)
-
     def test_extract_items_from_receipt(self, extract_items_agent):
         """Test that items can be extracted from a receipt."""
         receipt = extract_items_agent.extract_items_from_receipt(
@@ -40,32 +34,10 @@ class TestExtractItems:
         assert len(receipt.items) > 0
 
         # Verify each item in the receipt
-        for item in receipt.items:
-            assert isinstance(item, ReceiptItem)
-            assert item.name is not None
-            assert item.price is not None
-
-    def test_validate_items(self, extract_items_agent, validate_items_agent):
-        """Test that items can be validated and enriched with nutritional information."""
-        # First extract items
-        receipt = extract_items_agent.extract_items_from_receipt(
-            receipt_url=self.RECEIPT_URL, image_url=self.IMAGE_URL
-        )
-
-        # Then validate items
-        validated_items = validate_items_agent.validate_items(receipt)
-
-        # Verify the validated items
-        assert isinstance(validated_items, list)
-        assert len(validated_items) > 0
-
-        # Check nutritional information is present
-        for item in validated_items:
-            assert isinstance(item, Item)
-            assert item.name is not None
-            assert item.price is not None
-            assert item.serving_size is not None
-            assert item.per_serving_macros is not None
+        for receipt_item in receipt.items:
+            assert isinstance(receipt_item, ReceiptItem)
+            assert receipt_item.item is not None
+            assert receipt_item.price is not None
 
     def test_invalid_receipt_url(self, extract_items_agent):
         """Test that appropriate error is raised for invalid receipt URL."""

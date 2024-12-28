@@ -63,27 +63,6 @@ class StorageType(enum.Enum):
     FREEZER = "freezer"
 
 
-class Macro(enum.Enum):
-    """
-    Enumeration of macronutrients and nutritional information.
-
-    Attributes:
-        CARB: Represents carbohydrates.
-        FAT: Represents fats.
-        PROTEIN: Represents proteins.
-        SUGAR: Represents sugars.
-        CALORIES: Represents calories.
-        FIBER: Represents dietary fiber.
-    """
-
-    CARB = "carbohydrates"
-    FAT = "fat"
-    PROTEIN = "protein"
-    SUGAR = "sugar"
-    CALORIES = "calories"
-    FIBER = "fiber"
-
-
 # Common unit string mappings
 UNIT_MAPPINGS = {
     # Weight units
@@ -140,6 +119,7 @@ UNIT_MAPPINGS = {
     "dashes": Unit.NONE,
 }
 
+
 # Unit type mappings
 UNIT_TYPE_MAPPINGS = {
     Unit.GRAMS: UnitType.WEIGHT,
@@ -151,29 +131,4 @@ UNIT_TYPE_MAPPINGS = {
     Unit.MILLILITER: UnitType.VOLUME,
     Unit.KCAL: UnitType.ENERGY,
     Unit.NONE: UnitType.NONE,
-}
-
-MACRO_MAPPINGS = {
-    # Carbohydrates
-    "carbohydrates": Macro.CARB,
-    "carbohydrate": Macro.CARB,
-    "carbs": Macro.CARB,
-    # Fat
-    "fat": Macro.FAT,
-    "fats": Macro.FAT,
-    "total fat": Macro.FAT,
-    # Protein
-    "protein": Macro.PROTEIN,
-    # Sugar
-    "sugar": Macro.SUGAR,
-    "sugars": Macro.SUGAR,
-    "total sugars": Macro.SUGAR,
-    # Calories
-    "calories": Macro.CALORIES,
-    "cals": Macro.CALORIES,
-    "kcal": Macro.CALORIES,
-    # Fiber
-    "fiber": Macro.FIBER,
-    "total fiber": Macro.FIBER,
-    "dietary fiber": Macro.FIBER,
 }
